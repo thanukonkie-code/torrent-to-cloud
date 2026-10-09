@@ -1,0 +1,91 @@
+# Torrent to Cloud Web App
+
+A web application for searching public torrent indexes, downloading torrents with magnet links, tracking download progress, and uploading completed files to OneDrive.
+
+## Features
+
+- Search torrent results from multiple public sources
+- Download using magnet links
+- Track job status and progress in the dashboard
+- Pause and resume torrents
+- Authenticate to OneDrive with device code flow
+- Upload completed files from the web UI
+
+## Tech stack
+
+- Python 3.10+
+- Flask
+- aria2 for torrent downloading
+- Microsoft Graph for OneDrive uploads
+
+## Quick start
+
+1. Clone the repository
+2. Create and activate a virtual environment
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+```
+
+3. Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+4. Install aria2
+
+- macOS: `brew install aria2`
+- Ubuntu/Debian: `sudo apt-get install aria2`
+- Windows: install from https://aria2.github.io/
+
+5. Configure environment variables
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` and set:
+
+```bash
+MICROSOFT_CLIENT_ID=your_app_client_id
+MICROSOFT_TENANT_ID=common
+ARIA2_RPC_PORT=6800
+ARIA2_RPC_SECRET=
+DEFAULT_DOWNLOAD_DIR=~/Downloads/torrent_web
+```
+
+6. Run the web app
+
+```bash
+flask --app app run --debug --host 0.0.0.0 --port 5000
+```
+
+or
+
+```bash
+python app.py
+```
+
+## OneDrive login
+
+Open the app in a browser, then visit the login page and complete the Microsoft device-code authentication flow.
+
+## Usage
+
+- Search for a torrent on the home page
+- Click "Download" to queue the magnet link
+- View progress on the downloads dashboard
+- Pause or resume torrents from the dashboard
+- Upload a completed file to OneDrive from the upload form
+
+## Notes
+
+- Public torrent indexes can change and may rate-limit requests.
+- The app relies on aria2 RPC, which must be available locally.
+- The app keeps local state in `~/.torrent_web`.
+
+## License
+
+MIT

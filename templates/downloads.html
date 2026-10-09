@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <section class="card">
+    <h1>Downloads</h1>
+    <form method="post" action="{{ url_for('upload') }}" enctype="multipart/form-data">
+      <div class="field-row upload-row">
+        <input type="file" name="file" required>
+        <input type="text" name="folder" placeholder="Optional OneDrive folder">
+        <button type="submit">Upload to OneDrive</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>Active jobs</h2>
+    {% if jobs %}
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Status</th>
+            <th>Progress</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for job in jobs %}
+            <tr>
+              <td>{{ job.id }}</td>
+              <td>{{ job.name }}</td>
+              <td>{{ job.status }}</td>
+              <td>{{ job.progress }}%</td>
+              <td>
+                {% if job.status == 'active' %}
+                  <form method="post" action="{{ url_for('pause', job_id=job.id) }}">
+                    <button type="submit">Pause</button>
+                  </form>
+                {% else %}
+                  <form method="post" action="{{ url_for('resume', job_id=job.id) }}">
+                    <button type="submit">Resume</button>
+                  </form>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p>No downloads yet.</p>
+    {% endif %}
+  </section>
+{% endblock %}

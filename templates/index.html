@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <section class="card">
+    <h1>Torrent Search</h1>
+    <form method="post" action="{{ url_for('search') }}">
+      <div class="field-row">
+        <input type="text" name="query" value="{{ query or '' }}" placeholder="Search for a torrent..." required>
+        <select name="source">
+          <option value="all" {% if source == 'all' %}selected{% endif %}>All</option>
+          <option value="piratebay" {% if source == 'piratebay' %}selected{% endif %}>PirateBay</option>
+          <option value="1337x" {% if source == '1337x' %}selected{% endif %}>1337x</option>
+        </select>
+        <button type="submit">Search</button>
+      </div>
+    </form>
+  </section>
+
+  {% if results %}
+    <section class="card">
+      <h2>Results</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Source</th>
+            <th>Size</th>
+            <th>Seeds</th>
+            <th>Leech</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for result in results %}
+            <tr>
+              <td>{{ result.title }}</td>
+              <td>{{ result.source }}</td>
+              <td>{{ result.size }}</td>
+              <td>{{ result.seeders }}</td>
+              <td>{{ result.leechers }}</td>
+              <td>
+                <form method="post" action="{{ url_for('download') }}">
+                  <input type="hidden" name="magnet" value="{{ result.magnet_url }}">
+                  <input type="hidden" name="title" value="{{ result.title }}">
+                  <button type="submit">Download</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+  {% endif %}
+{% endblock %}

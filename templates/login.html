@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <section class="card">
+    <h1>OneDrive Login</h1>
+    <p>Authenticate to Microsoft to upload downloaded files to your OneDrive account.</p>
+    <form method="post" action="{{ url_for('login') }}">
+      <button type="submit">Sign in with OneDrive</button>
+    </form>
+  </section>
+{% endblock %}

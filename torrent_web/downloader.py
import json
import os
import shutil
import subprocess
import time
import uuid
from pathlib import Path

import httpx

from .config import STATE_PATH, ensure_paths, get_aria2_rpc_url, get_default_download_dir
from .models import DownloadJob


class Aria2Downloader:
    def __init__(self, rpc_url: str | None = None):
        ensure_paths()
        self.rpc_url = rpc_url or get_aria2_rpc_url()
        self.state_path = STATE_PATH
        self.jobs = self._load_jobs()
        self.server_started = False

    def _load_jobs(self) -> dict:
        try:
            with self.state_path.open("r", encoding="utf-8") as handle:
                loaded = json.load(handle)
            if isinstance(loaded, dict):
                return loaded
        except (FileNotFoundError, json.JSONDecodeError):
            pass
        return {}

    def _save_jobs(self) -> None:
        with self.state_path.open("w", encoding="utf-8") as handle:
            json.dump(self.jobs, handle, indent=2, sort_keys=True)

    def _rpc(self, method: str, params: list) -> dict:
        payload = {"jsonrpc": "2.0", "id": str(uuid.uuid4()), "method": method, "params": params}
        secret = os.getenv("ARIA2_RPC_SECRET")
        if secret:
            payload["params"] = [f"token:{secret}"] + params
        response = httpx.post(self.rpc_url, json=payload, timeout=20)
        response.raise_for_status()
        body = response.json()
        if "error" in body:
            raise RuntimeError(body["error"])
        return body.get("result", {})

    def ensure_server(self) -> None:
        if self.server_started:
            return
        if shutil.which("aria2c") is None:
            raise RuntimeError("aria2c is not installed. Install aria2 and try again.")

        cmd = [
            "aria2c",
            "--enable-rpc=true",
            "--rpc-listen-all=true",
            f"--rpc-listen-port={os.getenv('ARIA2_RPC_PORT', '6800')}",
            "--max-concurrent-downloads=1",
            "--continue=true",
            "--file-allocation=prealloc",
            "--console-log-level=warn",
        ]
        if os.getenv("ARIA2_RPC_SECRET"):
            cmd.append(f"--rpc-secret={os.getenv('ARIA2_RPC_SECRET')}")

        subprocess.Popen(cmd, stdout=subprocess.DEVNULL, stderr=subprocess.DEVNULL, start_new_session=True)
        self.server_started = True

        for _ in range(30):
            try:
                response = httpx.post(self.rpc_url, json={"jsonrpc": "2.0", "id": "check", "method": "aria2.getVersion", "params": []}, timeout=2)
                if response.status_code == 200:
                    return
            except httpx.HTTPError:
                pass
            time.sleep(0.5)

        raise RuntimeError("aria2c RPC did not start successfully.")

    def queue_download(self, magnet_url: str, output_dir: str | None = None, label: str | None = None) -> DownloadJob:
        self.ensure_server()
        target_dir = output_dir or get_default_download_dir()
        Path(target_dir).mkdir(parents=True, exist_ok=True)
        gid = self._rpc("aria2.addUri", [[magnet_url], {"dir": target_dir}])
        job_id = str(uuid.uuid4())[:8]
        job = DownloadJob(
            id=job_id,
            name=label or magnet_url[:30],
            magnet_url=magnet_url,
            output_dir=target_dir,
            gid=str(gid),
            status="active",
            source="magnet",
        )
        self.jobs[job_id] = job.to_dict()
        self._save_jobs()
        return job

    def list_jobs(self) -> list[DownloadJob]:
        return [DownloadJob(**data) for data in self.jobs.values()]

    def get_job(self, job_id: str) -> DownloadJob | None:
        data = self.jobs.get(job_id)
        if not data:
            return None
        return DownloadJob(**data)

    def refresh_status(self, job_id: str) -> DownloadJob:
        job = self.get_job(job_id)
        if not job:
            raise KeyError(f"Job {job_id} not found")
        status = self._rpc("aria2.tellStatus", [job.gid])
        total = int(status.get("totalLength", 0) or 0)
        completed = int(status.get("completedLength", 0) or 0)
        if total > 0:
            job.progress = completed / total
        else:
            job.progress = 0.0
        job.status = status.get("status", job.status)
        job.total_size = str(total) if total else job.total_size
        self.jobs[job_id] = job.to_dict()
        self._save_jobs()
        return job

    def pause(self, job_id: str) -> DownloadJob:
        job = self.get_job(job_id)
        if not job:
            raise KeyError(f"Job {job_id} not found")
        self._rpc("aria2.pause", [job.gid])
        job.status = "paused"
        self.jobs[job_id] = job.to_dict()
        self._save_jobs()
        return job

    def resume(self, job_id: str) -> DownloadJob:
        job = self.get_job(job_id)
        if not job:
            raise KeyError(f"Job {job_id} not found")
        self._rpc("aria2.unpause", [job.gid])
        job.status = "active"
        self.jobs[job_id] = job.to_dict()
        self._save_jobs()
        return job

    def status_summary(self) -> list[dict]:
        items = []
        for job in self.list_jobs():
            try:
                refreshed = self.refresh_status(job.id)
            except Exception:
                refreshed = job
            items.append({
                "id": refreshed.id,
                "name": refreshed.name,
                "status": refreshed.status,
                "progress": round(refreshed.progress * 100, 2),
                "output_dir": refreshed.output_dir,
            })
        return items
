@@ -1,0 +1,114 @@
+import re
+import httpx
+from bs4 import BeautifulSoup
+
+from .models import TorrentResult
+
+
+def _clean(value: str) -> str:
+    return value.strip().replace("\n", " ").replace("\r", " ")
+
+
+class PirateBayProvider:
+    name = "piratebay"
+
+    def search(self, query: str, limit: int = 20) -> list[TorrentResult]:
+        url = f"https://apibay.org/q.php?q={query.replace(' ', '+')}"
+        response = httpx.get(url, timeout=20)
+        response.raise_for_status()
+        payload = response.json()
+        results = []
+        for item in payload[:limit]:
+            info_hash = item.get("info_hash")
+            title = _clean(item.get("name", "Unknown"))
+            if not info_hash:
+                continue
+            magnet_url = f"magnet:?xt=urn:btih:{info_hash}&dn={title}"
+            results.append(TorrentResult(
+                title=title,
+                source=self.name,
+                size=item.get("size") or "unknown",
+                seeders=int(item.get("seeders") or 0),
+                leechers=int(item.get("leechers") or 0),
+                magnet_url=magnet_url,
+                page_url=f"https://thepiratebay.org/search/{query.replace(' ', '+')}/0/99/0",
+            ))
+        return results
+
+
+class L337xProvider:
+    name = "1337x"
+
+    def search(self, query: str, limit: int = 20) -> list[TorrentResult]:
+        query_path = query.strip().replace(" ", "+")
+        url = f"https://www.1337x.to/search/{query_path}/1/"
+        response = httpx.get(url, timeout=20, headers={"User-Agent": "Mozilla/5.0"})
+        response.raise_for_status()
+        soup = BeautifulSoup(response.text, "html.parser")
+        rows = soup.select("table.table-list tbody tr")
+        results = []
+        for row in rows[:limit]:
+            anchor = row.select_one("a[href*='/torrent/']")
+            if not anchor:
+                continue
+            title = _clean(anchor.get_text(" ", strip=True))
+            info_href = anchor.get("href", "")
+            if not info_href.startswith("http"):
+                info_href = "https://www.1337x.to" + info_href
+            try:
+                detail = httpx.get(info_href, timeout=20, headers={"User-Agent": "Mozilla/5.0"})
+                detail.raise_for_status()
+            except Exception:
+                continue
+            magnet_match = re.search(r"magnet:\?[^\s\"']+", detail.text)
+            if not magnet_match:
+                continue
+            cells = row.find_all("td")
+            size = "unknown"
+            seeders = 0
+            leechers = 0
+            if len(cells) >= 5:
+                if cells[-3].get_text(strip=True):
+                    size = _clean(cells[-3].get_text(" ", strip=True))
+                seed_text = cells[-2].get_text(strip=True)
+                lee_text = cells[-1].get_text(strip=True)
+                if seed_text.isdigit():
+                    seeders = int(seed_text)
+                if lee_text.isdigit():
+                    leechers = int(lee_text)
+            results.append(TorrentResult(
+                title=title,
+                source=self.name,
+                size=size,
+                seeders=seeders,
+                leechers=leechers,
+                magnet_url=magnet_match.group(0),
+                page_url=info_href,
+            ))
+        return results
+
+
+def search_torrents(query: str, source: str = "all", limit: int = 10) -> list[TorrentResult]:
+    providers = []
+    source_key = (source or "all").lower()
+    if source_key in {"piratebay", "all"}:
+        providers.append(PirateBayProvider())
+    if source_key in {"1337x", "all"}:
+        providers.append(L337xProvider())
+
+    results: list[TorrentResult] = []
+    for provider in providers:
+        try:
+            results.extend(provider.search(query, limit=limit))
+        except Exception:
+            continue
+
+    deduped: list[TorrentResult] = []
+    seen: set[tuple[str, str]] = set()
+    for result in results:
+        key = (result.title.lower(), result.magnet_url)
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append(result)
+    return deduped[:limit]
