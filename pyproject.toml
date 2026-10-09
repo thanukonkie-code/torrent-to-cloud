@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "torrent-to-cloud"
+version = "0.1.0"
+description = "CLI tool for torrent search and OneDrive upload"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "click>=8.1.7",
+  "httpx>=0.27.0",
+  "requests>=2.32.0",
+  "beautifulsoup4>=4.12.3",
+  "python-dotenv>=1.0.1",
+  "msal>=1.29.0",
+]
+
+[project.scripts]
+torrent-cloud = "torrent_cli.cli:cli"
+
+[tool.setuptools]
+packages = ["torrent_cli"]
